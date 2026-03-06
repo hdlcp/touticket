@@ -58,7 +58,7 @@ export default function Dashboard() {
     // Afficher un message plus précis
     if (error.response) {
       // Erreur de l'API (4xx, 5xx)
-      toast.error(`Erreur serveur: ${error.response.status}`);
+      toast.error(`Erreur serveur. Veuillez réessayer plus tard`);
     } else if (error.request) {
       // Pas de réponse du serveur
       toast.error("Impossible de joindre le serveur");

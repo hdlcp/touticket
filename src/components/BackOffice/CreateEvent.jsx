@@ -39,7 +39,7 @@ const handleCreate = async (formData, tickets) => {
 
   } catch (error) {
     console.error(error);
-    toast.error("Erreur lors de la création complète");
+    toast.error("Erreur lors de la création complète. Vérifiez les informations et réessayez.");
   } finally {
     setLoading(false);
   }
