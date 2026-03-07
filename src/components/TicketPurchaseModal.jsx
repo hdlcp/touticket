@@ -62,7 +62,7 @@ const launchPayment = async () => {
     openKkiapayWidget({
       amount: getTotalPrice(),
       api_key: import.meta.env.VITE_KKIAPAY_PUBLIC_KEY,
-      sandbox: true,
+      sandbox: false,
       description: "Achat de ticket",
       data: encryptedData,
       callback_url: window.location.href

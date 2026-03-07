@@ -1,11 +1,14 @@
 import api from "./api";
 
 export const createTicket = async (data) => {
-  return api.post("api/ticket/create", {
-    json: data
-  }).json();
+  try {
+    return await api.post("api/ticket/create", { json: data }).json();
+  } catch (error) {
+    const errorBody = await error.response?.json();
+    console.log("📛 Erreur ticket détaillée:", errorBody);
+    throw new Error(errorBody?.message || "Erreur ticket 500");
+  }
 };
-
 export const updateTicket = async (ticketId, ticketData) => {
   return await api.put(`api/ticket/${ticketId}/update`, {
     json: ticketData,

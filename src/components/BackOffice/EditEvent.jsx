@@ -31,7 +31,7 @@ export default function EditEvent() {
           setEventData({
             name: event.name,
             description: event.description,
-            type: event.type || "",
+            event_type: event.event_type || "",
             city: event.city,
             address: event.address,
             locationDesc: event.city, // ou event.address selon votre choix

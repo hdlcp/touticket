@@ -23,7 +23,7 @@ export async function geocodeAddress(address) {
     return {
       latitude: parseFloat(data[0].lat),
       longitude: parseFloat(data[0].lon),
-    };
+    }; 
   } catch (error) {
     console.error("Géocodage error:", error);
     throw new Error("Impossible de géocoder l'adresse. Veuillez réessayer.");
@@ -75,7 +75,7 @@ export default function EventForm({
   const [form, setForm] = useState({
     name: initialData.name || "",
     description: initialData.description || "",
-    type: initialData.type || "",
+    event_type: initialData.event_type || "",
     locationDesc: initialData.locationDesc || "", // city ET address pour l'API
     addressInput: initialData.addressInput || "", // Pour géocodage uniquement
     startDate: initialData.startDate || "",
@@ -177,7 +177,7 @@ export default function EventForm({
 
     try {
       // Validation
-      if (!form.name || !form.description || !form.type) {
+      if (!form.name || !form.description || !form.event_type) {
         alert("Veuillez remplir tous les champs obligatoires");
         return;
       }
@@ -210,9 +210,23 @@ export default function EventForm({
         }
       }
 
-      // 🔥 Géocodage pour obtenir latitude/longitude
-      const { latitude, longitude } = await geocodeAddress(form.addressInput);
+      // 🔥 Géocodage : réutiliser les coords existantes en mode edit si l'adresse n'a pas changé
+    let latitude, longitude;
 
+    if (
+      mode === "edit" &&
+      initialData.latitude &&
+      initialData.longitude &&
+      form.addressInput === initialData.addressInput
+    ) {
+      latitude = initialData.latitude;
+      longitude = initialData.longitude;
+      console.log("📍 Coordonnées existantes réutilisées:", latitude, longitude);
+    } else {
+      const coords = await geocodeAddress(form.addressInput);
+      latitude = coords.latitude;
+      longitude = coords.longitude;
+    }
       // Dates ISO
       const started_at = new Date(`${form.startDate}T${form.startTime}`).toISOString();
       const ended_at = new Date(`${form.endDate}T${form.endTime}`).toISOString();
@@ -222,6 +236,7 @@ export default function EventForm({
       const formData = new FormData();
       formData.append("name", form.name);
       formData.append("description", form.description);
+      formData.append("event_type", form.event_type);
       
       // 🔥 city ET address = locationDesc (description du lieu)
       formData.append("city", form.locationDesc);
@@ -298,16 +313,20 @@ export default function EventForm({
           Type d'événement *
         </label>
         <select
-          name="type"
-          value={form.type}
+          name="event_type"
+          value={form.event_type}
           onChange={handleChange}
           className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
         >
           <option value="">Choisissez le type</option>
-          <option>Concert</option>
-          <option>Conférence</option>
-          <option>Festival</option>
+  <option value="Concert">Concert</option>
+  <option value="Soirée Cinéma">Soirée Cinéma</option>
+  <option value="JEEP">JEEP</option>
+  <option value="Soirée de Gala">Soirée de Gala</option>
+  <option value="Sortie Récréative">Sortie Récréative</option>
+  <option value="Chill">Chill</option>
+  <option value="Concours">Concours</option>
         </select>
       </div>
 
