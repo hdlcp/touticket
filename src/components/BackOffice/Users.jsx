@@ -1,7 +1,143 @@
 import { useEffect, useState } from "react";
-import { Search, Shield, UserCircle, User, ChevronLeft, ChevronRight, Trash2} from "lucide-react";
+import { Search, Shield, UserCircle, User, ChevronLeft, ChevronRight, Trash2, UserPlus, X } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { getAllUsers, deleteUser } from "../../services/userService";
+import { getAllUsers, deleteUser, addAdmin } from "../../services/userService";
+
+// Modal d'ajout d'admin
+function AddAdminModal({ onClose, onSuccess }) {
+  const [form, setForm] = useState({
+    email: "",
+    firstname: "",
+    lastname: "",
+    username: "",
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!form.email || !form.firstname || !form.lastname || !form.username) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await addAdmin(form);
+      toast.success("Administrateur ajouté avec succès !");
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Erreur ajout admin:", error);
+      toast.error(error.message || "Erreur lors de l'ajout de l'administrateur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 space-y-5">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+              <UserPlus className="w-4 h-4 text-orange-600" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900">Ajouter un administrateur</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Formulaire */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Prénom *
+              </label>
+              <input
+                name="firstname"
+                value={form.firstname}
+                onChange={handleChange}
+                placeholder="Jean"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Nom *
+              </label>
+              <input
+                name="lastname"
+                value={form.lastname}
+                onChange={handleChange}
+                placeholder="Dupont"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">
+              Nom d'utilisateur *
+            </label>
+            <input
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              placeholder="jean.dupont"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">
+              Email *
+            </label>
+            <input
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="jean.dupont@example.com"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 bg-main-gradient btn-gradient text-white px-4 py-2 rounded-lg text-sm font-semibold hover:shadow-md transition disabled:opacity-60"
+          >
+            {loading ? "Ajout en cours..." : "Ajouter l'admin"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -9,7 +145,8 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
-  const [searchType, setSearchType] = useState("q"); // q, q_email, q_name, q_username
+  const [searchType, setSearchType] = useState("q");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -19,16 +156,14 @@ export default function Users() {
     setLoading(true);
     try {
       const params = { page, per_page: 10 };
-      
       if (search.trim()) {
         params[searchType] = search.trim();
       }
-
       const res = await getAllUsers(params);
       setUsers(res.data.users_data || []);
       setTotalPages(res.data.total_pages || 1);
     } catch (error) {
-      console.error('Erreur chargement utilisateurs:', error);
+      console.error("Erreur chargement utilisateurs:", error);
       toast.error("Impossible de charger les utilisateurs");
     } finally {
       setLoading(false);
@@ -41,10 +176,8 @@ export default function Users() {
     fetchUsers();
   }
 
-
   async function handleDeleteUser(userId, userName) {
     if (!confirm(`Supprimer définitivement l'utilisateur ${userName} ?`)) return;
-
     try {
       await deleteUser(userId);
       toast.success("Utilisateur supprimé");
@@ -55,37 +188,27 @@ export default function Users() {
   }
 
   function getUserIcon(user) {
-    if (user.is_superuser) {
-      return <Shield className="w-5 h-5 text-purple-600" />;
-    } else if (user.is_admin) {
-      return <UserCircle className="w-5 h-5 text-orange-600" />;
-    } else {
-      return <User className="w-5 h-5 text-blue-600" />;
-    }
+    if (user.is_superuser) return <Shield className="w-5 h-5 text-purple-600" />;
+    if (user.is_admin) return <UserCircle className="w-5 h-5 text-orange-600" />;
+    return <User className="w-5 h-5 text-blue-600" />;
   }
 
   function getUserBadge(user) {
-    if (user.is_superuser) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
-          <Shield className="w-3 h-3" />
-          SuperAdmin
-        </span>
-      );
-    } else if (user.is_admin) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
-          <UserCircle className="w-3 h-3" />
-          Admin
-        </span>
-      );
-    } else {
-      return (
-        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-          Utilisateur
-        </span>
-      );
-    }
+    if (user.is_superuser) return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">
+        <Shield className="w-3 h-3" /> SuperAdmin
+      </span>
+    );
+    if (user.is_admin) return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
+        <UserCircle className="w-3 h-3" /> Admin
+      </span>
+    );
+    return (
+      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+        Utilisateur
+      </span>
+    );
   }
 
   if (loading && users.length === 0) {
@@ -104,19 +227,25 @@ export default function Users() {
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* En-tête */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Gestion des utilisateurs
-          </h1>
-          <p className="text-gray-600">
-            Liste complète des utilisateurs de la plateforme
-          </p>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Gestion des utilisateurs
+            </h1>
+            <p className="text-gray-600">Liste complète des utilisateurs de la plateforme</p>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-main-gradient btn-gradient text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:shadow-md transition whitespace-nowrap"
+          >
+            <UserPlus className="w-4 h-4" />
+            Ajouter un admin
+          </button>
         </div>
 
         {/* Barre de recherche */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-            
             <select
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
@@ -150,27 +279,17 @@ export default function Users() {
 
         {/* Liste des utilisateurs */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          
+
           {/* Version desktop */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                    Utilisateur
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                    Rôle
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                    Statut
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Utilisateur</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rôle</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Statut</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -179,48 +298,33 @@ export default function Users() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                          user.is_superuser 
-                            ? 'bg-purple-100' 
-                            : user.is_admin
-                            ? 'bg-orange-100'
-                            : 'bg-blue-100'
+                          user.is_superuser ? "bg-purple-100" : user.is_admin ? "bg-orange-100" : "bg-blue-100"
                         }`}>
                           {getUserIcon(user)}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            {user.firstname} {user.lastname}
-                          </p>
+                          <p className="font-semibold text-gray-900">{user.firstname} {user.lastname}</p>
                           <p className="text-sm text-gray-500">@{user.username}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getUserBadge(user)}
-                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{user.email}</td>
+                    <td className="px-6 py-4">{getUserBadge(user)}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                        user.is_active 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
+                        user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                       }`}>
-                        {user.is_active ? '✓ Actif' : '✗ Inactif'}
+                        {user.is_active ? "✓ Actif" : "✗ Inactif"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                       
-                        <button
-                          onClick={() => handleDeleteUser(user.id, `${user.firstname} ${user.lastname}`)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-5 h-5 text-red-600" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDeleteUser(user.id, `${user.firstname} ${user.lastname}`)}
+                        className="p-2 hover:bg-red-50 rounded-lg transition"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-600" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -235,43 +339,30 @@ export default function Users() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                      user.is_superuser 
-                        ? 'bg-purple-100' 
-                        : user.is_admin
-                        ? 'bg-orange-100'
-                        : 'bg-blue-100'
+                      user.is_superuser ? "bg-purple-100" : user.is_admin ? "bg-orange-100" : "bg-blue-100"
                     }`}>
                       {getUserIcon(user)}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">
-                        {user.firstname} {user.lastname}
-                      </p>
+                      <p className="font-semibold text-gray-900">{user.firstname} {user.lastname}</p>
                       <p className="text-xs text-gray-500">@{user.username}</p>
                     </div>
                   </div>
                   {getUserBadge(user)}
                 </div>
-
                 <p className="text-sm text-gray-700">{user.email}</p>
-
                 <div className="flex items-center justify-between pt-2">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                    user.is_active 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
+                    user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                   }`}>
-                    {user.is_active ? '✓ Actif' : '✗ Inactif'}
+                    {user.is_active ? "✓ Actif" : "✗ Inactif"}
                   </span>
-
-                  <div className="flex items-center gap-2">               
-                    <button
-                      onClick={() => handleDeleteUser(user.id, `${user.firstname} ${user.lastname}`)}
-                      className="p-2 hover:bg-red-50 rounded-lg transition"
-                    >
-                      <Trash2 className="w-5 h-5 text-red-600" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleDeleteUser(user.id, `${user.firstname} ${user.lastname}`)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -295,11 +386,9 @@ export default function Users() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-
             <span className="px-4 py-2 text-sm text-gray-700">
               Page {page} sur {totalPages}
             </span>
-
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
@@ -309,8 +398,15 @@ export default function Users() {
             </button>
           </div>
         )}
-
       </div>
+
+      {/* Modal ajout admin */}
+      {showAddModal && (
+        <AddAdminModal
+          onClose={() => setShowAddModal(false)}
+          onSuccess={fetchUsers}
+        />
+      )}
     </section>
   );
 }

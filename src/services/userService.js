@@ -27,3 +27,13 @@ export const getAllUsers = async (params = {}) => {
 export const deleteUser = async (userId) => {
   return await api.delete(`api/user/${userId}`).json();
 };
+
+export const addAdmin = async (data) => {
+  try {
+    return await api.post("api/user/admin/add", { json: data }).json();
+  } catch (error) {
+    const errorBody = await error.response?.json();
+    console.log("📛 Erreur addAdmin détaillée:", errorBody);
+    throw new Error(errorBody?.message || "Erreur ajout admin");
+  }
+};
