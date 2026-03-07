@@ -51,7 +51,7 @@ const launchPayment = async () => {
 
     const payload = buildPaymentPayload({
       itemsArray,
-      purchase_item_logo: "https://drive.google.com/file/d/1s7tCfN73oSli3YQZv2rajwH0-1KOMYX3/view?usp=sharing"
+      purchase_item_logo: "https://drive.google.com/uc?export=download&id=1s7tCfN73oSli3YQZv2rajwH0-1KOMYX3"
     });
 
     const encryptedData = await encryptData(

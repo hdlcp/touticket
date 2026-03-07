@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="flex items-center gap-2">
           <img 
             src={logo} 
-            alt="EPAC Events Logo" 
+            alt="EPAC Events Logo"
             className="w-8 h-8 object-contain"
           />
           <span className=" font-display text-lg">EPAC EVENTS</span>
@@ -18,7 +18,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-sm text-gray-400 text-center">
-          © 2025 AllEvents. Tous droits réservés.
+          © 2026 <a href="https://oloukpedeadeniyiprosper.pro" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors underline">touticket.com</a>. Tous droits réservés.
         </div>
 
         {/* Réseaux sociaux */}
