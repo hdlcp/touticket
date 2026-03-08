@@ -41,7 +41,7 @@ export default function EventCard({
                 />
 
                 {/* Overlay sombre pour lisibilité */}
-                <div className="absolute inset-0 bg-white/50" />
+                <div className="absolute inset-0 bg-white/0" />
 
                 {/* Image principale nette */}
                 <img
