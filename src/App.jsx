@@ -11,7 +11,6 @@ import ForgotPassword from "./components/BackOffice/ForgotPassword";
 import Login from "./components/BackOffice/Login";
 import SetPassword from "./components/BackOffice/SetPassword";
 import DetailEvent from "./components/DetailEvent";
-import Home from "./components/Home";
 import TicketSearch from "./components/TicketSearch";
 
 // Pages publiques Touticket
@@ -22,6 +21,12 @@ import ForgotPasswordPage from "./components/Touticket/ForgotPasswordPage";
 import EntityPage from "./components/Touticket/EntityPage";
 import VoteDetail from "./components/Touticket/VoteDetail";
 import CandidatePage from "./components/Touticket/CandidatePage";
+import DasboardTouticket from "./components/Touticket/Dashboard";
+import EventStatContainer from "./components/Touticket/EventStatContainer";
+import CreateEventPage from "./components/Touticket/CreateEventPage";
+
+
+
 
 
 
@@ -57,6 +62,11 @@ function App() {
           <Route path="/entity/:entityId" element={<EntityPage />} />
           <Route path="/vote/:id" element={<VoteDetail />} />
           <Route path="/entity/:entitySlug/event/:eventId/candidate/:candidateId" element={<CandidatePage />} />
+          <Route path="/touticket/dashboard" element={<DasboardTouticket />} />
+          <Route path="/touticket/dashboard/event/:eventId/statistics" element={<EventStatContainer />} />
+          <Route path="/create-event" element={<CreateEventPage />} />
+
+
 
           
 
@@ -78,6 +88,7 @@ function App() {
           <Route path="/admin/account" element={<AdminAccount />} />
           <Route path="/qr-scanner" element={<QRScanner />} />
           <Route path="/admin/users" element={<User />} />
+
         </Route>
       </Routes>
     </>

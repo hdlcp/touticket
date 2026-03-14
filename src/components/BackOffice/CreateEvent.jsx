@@ -1,52 +1,51 @@
-import EventForm from "./EventForm";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { createEvent } from "../../services/eventService";
 import { createTicket } from "../../services/ticketService";
-import { toast } from "react-hot-toast";
-import { useState } from "react";
+import EventForm from "../Touticket/TouticketComponents/EventForm";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-const handleCreate = async (formData, tickets) => {
-  try {
-    setLoading(true);
+  const handleCreate = async (formData, tickets) => {
+    try {
+      setLoading(true);
 
-    const eventRes = await createEvent(formData);
-    console.log("📦 Réponse événement complète:", eventRes);
+      const eventRes = await createEvent(formData);
+      console.log("📦 Réponse événement complète:", eventRes);
 
-    if (!eventRes.success) {
-      throw new Error("Erreur création événement");
+      if (!eventRes.success) {
+        throw new Error("Erreur création événement");
+      }
+
+      const eventId = eventRes.data.id;
+      console.log("🆔 Event ID récupéré:", eventId);
+
+      for (const ticket of tickets) {
+        const ticketData = {
+          event_id: eventId,
+          label: ticket.name,
+          available_places: Number(ticket.places),
+          price: Number(ticket.price),
+          description: ticket.description || "",
+        };
+        console.log("🎫 Ticket envoyé:", ticketData);
+
+        await createTicket(ticketData);
+      }
+
+      toast.success("Événement et tickets créés avec succès !");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("❌ Erreur complète:", error);
+      toast.error(error.message || "Erreur lors de la création.");
+    } finally {
+      setLoading(false);
     }
-
-    const eventId = eventRes.data.id;
-    console.log("🆔 Event ID récupéré:", eventId);
-
-    for (const ticket of tickets) {
-      const ticketData = {
-        event_id: eventId,
-        label: ticket.name,
-        available_places: Number(ticket.places),
-        price: Number(ticket.price),
-        description: ticket.description || "",
-      };
-      console.log("🎫 Ticket envoyé:", ticketData);
-      
-      await createTicket(ticketData);
-    }
-
-    toast.success("Événement et tickets créés avec succès !");
-    navigate("/dashboard");
-
-  } catch (error) {
-    console.error("❌ Erreur complète:", error);
-    toast.error(error.message || "Erreur lors de la création.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-16">
