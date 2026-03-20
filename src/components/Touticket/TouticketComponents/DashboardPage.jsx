@@ -7,25 +7,31 @@ import EventRow from "./EventRow";
 
 const TABS = [
   { id: "concert", label: "Billetterie" },
-  { id: "vote",    label: "Votes & Élections" },
+  { id: "vote", label: "Votes & Élections" },
 ];
 
 export default function DashboardPage({
-  concertStats  = [],
-  voteStats     = [],
+  concertStats = [],
+  voteStats = [],
   concertEvents = [],
-  voteEvents    = [],
-  eventLoading  = false,
-  eventPrices   = {},
-  title         = "Tableau de bord",
-  subtitle      = "Gérez vos événements et suivez vos ventes",
-  listTitle     = "Tous les événements",
-  listSubtitle  = "Gérez et modifiez vos événements",
+  voteEvents = [],
+  eventLoading = false,
+  eventPrices = {},
+  title = "Tableau de bord",
+  subtitle = "Gérez vos événements et suivez vos ventes",
+  listTitle = "Tous les événements",
+  listSubtitle = "Gérez et modifiez vos événements",
   onEventClick,
   onEventEdit,
   onEventDelete,
   formatDate = (d) =>
-    d ? new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—",
+    d
+      ? new Date(d).toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—",
 }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("concert");
@@ -43,18 +49,21 @@ export default function DashboardPage({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const activeStats  = activeTab === "concert" ? concertStats  : voteStats;
+  const activeStats = activeTab === "concert" ? concertStats : voteStats;
   const activeEvents = activeTab === "concert" ? concertEvents : voteEvents;
 
   return (
     <div className="min-h-screen">
       <section className="py-8 sm:py-12 md:py-16 px-4 sm:px-6 lg:px-16 mx-auto">
-
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-black">{title}</h1>
-            <p className="mt-1 text-sm sm:text-base text-gray-500">{subtitle}</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-black">
+              {title}
+            </h1>
+            <p className="mt-1 text-sm sm:text-base text-gray-500">
+              {subtitle}
+            </p>
           </div>
 
           {/* Bouton avec dropdown */}
@@ -66,14 +75,18 @@ export default function DashboardPage({
             >
               <Plus className="w-4 h-4" />
               Nouvel événement
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {dropdownOpen && (
               <div className="absolute right-0 top-12 w-58 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-
                 <button
-                  onClick={() => { setDropdownOpen(false); navigate("/create-event?type=concert"); }}
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate("/create-event?type=concert");
+                  }}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-orange-50 group-hover:bg-orange-100 flex items-center justify-center flex-shrink-0 transition-colors">
@@ -81,14 +94,19 @@ export default function DashboardPage({
                   </div>
                   <div className="text-left">
                     <p className="font-semibold">Billetterie</p>
-                    <p className="text-xs text-gray-400">Concert, soirée, gala...</p>
+                    <p className="text-xs text-gray-400">
+                      Concert, soirée, gala...
+                    </p>
                   </div>
                 </button>
 
                 <div className="border-t border-gray-100" />
 
                 <button
-                  onClick={() => { setDropdownOpen(false); navigate("/create-event?type=vote"); }}
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate("/create-event?type=vote");
+                  }}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-lg bg-green-50 group-hover:bg-green-100 flex items-center justify-center flex-shrink-0 transition-colors">
@@ -96,10 +114,11 @@ export default function DashboardPage({
                   </div>
                   <div className="text-left">
                     <p className="font-semibold">Votes & Élections</p>
-                    <p className="text-xs text-gray-400">Miss, Mister, talents...</p>
+                    <p className="text-xs text-gray-400">
+                      Miss, Mister, talents...
+                    </p>
                   </div>
                 </button>
-
               </div>
             )}
           </div>
@@ -112,16 +131,23 @@ export default function DashboardPage({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-5 py-2 rounded-full border text-sm font-medium transition-all duration-200
-                ${activeTab === tab.id
-                  ? "border-orange-500 text-orange-500 bg-white"
-                  : "border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 bg-transparent"
+                ${
+                  activeTab === tab.id
+                    ? "border-orange-500 text-orange-500 bg-white"
+                    : "border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-200 bg-transparent"
                 }`}
             >
               {tab.label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                activeTab === tab.id ? "bg-orange-50 text-orange-400" : "bg-gray-100 text-gray-400"
-              }`}>
-                {tab.id === "concert" ? concertEvents.length : voteEvents.length}
+              <span
+                className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.id
+                    ? "bg-orange-50 text-orange-400"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {tab.id === "concert"
+                  ? concertEvents.length
+                  : voteEvents.length}
               </span>
             </button>
           ))}
@@ -156,18 +182,21 @@ export default function DashboardPage({
                 <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
                   <Plus className="w-5 h-5 text-gray-300" />
                 </div>
-                <p className="text-sm font-medium text-gray-500">Aucun événement trouvé</p>
-                <p className="text-xs text-gray-400 mt-1">Créez votre premier événement</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Aucun événement trouvé
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Créez votre premier événement
+                </p>
               </div>
             ) : (
               activeEvents.map((event) => (
                 <EventRow
                   key={event.id}
                   id={event.id}
-                  type={event.type}
-                  image={event.images?.[0]?.url}
+                  image={event.cover?.url} // ✅ cover.url
                   title={event.name}
-                  category={event.category}
+                  category={event.event_type?.label} // ✅ event_type.label
                   date={formatDate(event.started_at)}
                   publishedAt={formatDate(event.created_at)}
                   price={
@@ -175,8 +204,12 @@ export default function DashboardPage({
                       ? `${eventPrices[event.id].toLocaleString()} FCFA`
                       : "Prix en attente..."
                   }
-                  location={event.city}
-                  status={new Date(event.ended_at) > new Date() ? "En cours" : "Terminé"}
+                  location={event.place_description} // ✅ place_description
+                  status={
+                    new Date(event.started_at) > new Date()
+                      ? "À venir"
+                      : "En cours"
+                  }
                   onClick={() => onEventClick?.(event.id)}
                   onEdit={() => onEventEdit?.(event.id)}
                   onDelete={() => onEventDelete?.(event.id)}

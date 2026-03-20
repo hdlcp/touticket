@@ -1,17 +1,50 @@
-// tabs/Billetterie.jsx
-export default function Billetterie() {
-  return (
+// TouticketComponents/Billeterie.jsx
+import { Loader2 } from "lucide-react";
+import EventCard from "./EventCard";
+import { useNavigate } from "react-router-dom";
+
+export default function Billetterie({ events = [], loading, error, onRetry }) {
+   const navigate = useNavigate();
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-2 text-gray-400">
+      <Loader2 className="w-5 h-5 animate-spin" />
+      <span className="text-sm">Chargement...</span>
+    </div>
+  );
+
+  if (error) return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center mb-4">
-        <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-            d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-        </svg>
-      </div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-1">Billetterie</h2>
-      <p className="text-sm text-gray-400 max-w-sm">
-        Les événements et billets disponibles apparaîtront ici.
-      </p>
+      <p className="text-sm text-red-400 mb-2">{error}</p>
+      <button onClick={onRetry} className="text-xs text-orange-500 font-semibold underline">Réessayer</button>
+    </div>
+  );
+
+  if (events.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <p className="text-sm text-gray-400">Aucun événement de billetterie disponible.</p>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {events.map((event) => (
+       <EventCard
+          key={event.id}
+          image={event.cover?.url}                    // ✅ cover.url
+          title={event.name}
+          badge={event.event_type?.label}             // ✅ event_type.label
+          date={event.started_at}
+          location={event.city}                    // ✅ city (pas place_description)
+          price={
+            event.ticket_minimum_price !== null
+              ? event.ticket_minimum_price
+              : undefined                          // ✅ undefined si null → affiche "Prix en attente"
+          }       // ✅ place_description
+          publishedAt={event.created_at}
+          onCardClick={() => navigate(`/event/${event.id}`)}
+          onButtonClick={() => navigate(`/event/${event.id}`)}
+        />
+      ))}
     </div>
   );
 }

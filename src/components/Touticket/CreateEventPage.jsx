@@ -4,6 +4,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import EventForm from "./TouticketComponents/EventForm";
 import VoteEventForm from "./TouticketComponents/VoteEventForm";
+import { createVoteEvent } from "@/services/voteEventService";
+import { createTicketingEvent,  createTicketForEvent} from "@/services/eventService";
+import toast from "react-hot-toast";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
@@ -14,31 +17,75 @@ export default function CreateEventPage() {
   const [eventType, setEventType] = useState(typeParam || null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmitConcert = async (formData, tickets) => {
-    setLoading(true);
-    try {
-      console.log("Concert formData:", formData);
-      console.log("Tickets:", tickets);
-      navigate("/dashboard");
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleSubmitConcert = async (formData, tickets) => {
+  setLoading(true);
+  try {
+    const res = await createTicketingEvent(formData);
 
-  const handleSubmitVote = async (formData, candidates) => {
-    setLoading(true);
-    try {
-      console.log("Vote formData:", formData);
-      console.log("Candidates:", candidates);
-      navigate("/dashboard");
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setLoading(false);
+    if (!res.success) {
+      toast.error(res.message || "Erreur lors de la création");
+      return;
     }
-  };
+
+    const eventId = res.data?.id;
+    toast.success("Événement créé !");
+
+    if (eventId && tickets.length > 0) {
+      await Promise.all(
+        tickets.map((ticket) =>
+          createTicketForEvent(eventId, {
+            name: ticket.name,
+            places: Number(ticket.places),
+            price: Number(ticket.price),
+            description: ticket.description,
+          })
+        )
+      );
+      toast.success("Tickets créés !");
+    }
+
+    navigate("/touticket/dashboard");
+  } catch (e) {
+    // ✅ Récupère le vrai message d'erreur de l'API
+    if (e.response) {
+      try {
+        const errBody = await e.response.json();
+        toast.error(errBody.message || "Erreur lors de la création");
+      } catch {
+        toast.error("Erreur lors de la création");
+      }
+    } else {
+      toast.error(e?.message || "Erreur inattendue");
+    }
+    console.error("Erreur création événement:", e);
+  } finally {
+    setLoading(false);
+  }
+};
+const handleSubmitVote = async (formFields, candidates, coverFile) => {
+  setLoading(true);
+  try {
+    console.log("formFields:", formFields);
+    console.log("candidates:", candidates);
+    console.log("coverFile:", coverFile);
+
+    const res = await createVoteEvent(formFields, candidates, coverFile);
+
+    console.log("✅ Réponse API:", res); // ← ajoute ce log
+
+    if (res.success) {
+      toast.success("Événement créé avec succès !");
+      navigate("/touticket/dashboard");
+    } else {
+      toast.error(res.message || "Erreur lors de la création");
+    }
+  } catch (e) {
+    console.error("❌ Erreur:", e);
+    toast.error(e?.message || "Erreur lors de la création");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50">

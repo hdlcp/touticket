@@ -1,70 +1,8 @@
 import { useState } from "react";
 import { Calendar, Clock, MapPin, Upload, Save, X, Plus } from "lucide-react";
+import { useEventTypes } from "./hooks/useEventTypes";
+import { toast } from "react-hot-toast";
 
-// Fonctions de géocodage avec gestion des erreurs
-export async function geocodeAddress(address) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-  
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'EventTicketing/1.0'
-      }
-    });
-    
-    if (!res.ok) throw new Error("Erreur de géocodage");
-    
-    const data = await res.json();
-
-    if (!data || data.length === 0) {
-      throw new Error("Adresse introuvable");
-    }
-
-    return {
-      latitude: parseFloat(data[0].lat),
-      longitude: parseFloat(data[0].lon),
-    }; 
-  } catch (error) {
-    console.error("Géocodage error:", error);
-    throw new Error("Impossible de géocoder l'adresse. Veuillez réessayer.");
-  }
-}
-
-let searchTimeout;
-export async function searchAddress(query) {
-  if (!query || query.length < 3) return [];
-
-  // Debounce pour éviter trop de requêtes
-  return new Promise((resolve) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(async () => {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`;
-        const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'EventTicketing/1.0'
-          }
-        });
-        
-        if (!res.ok) {
-          resolve([]);
-          return;
-        }
-        
-        const data = await res.json();
-        
-        resolve(data.map((item) => ({
-          label: item.display_name,
-          latitude: parseFloat(item.lat),
-          longitude: parseFloat(item.lon),
-        })));
-      } catch (error) {
-        console.error("Search error:", error);
-        resolve([]);
-      }
-    }, 500);
-  });
-}
 
 export default function EventForm({
   initialData = {},
@@ -77,7 +15,7 @@ export default function EventForm({
     description: initialData.description || "",
     event_type: initialData.event_type || "",
     locationDesc: initialData.locationDesc || "", // city ET address pour l'API
-    addressInput: initialData.addressInput || "", // Pour géocodage uniquement
+    mapsUrl: initialData.mapsUrl || "",// Pour géocodage uniquement
     startDate: initialData.startDate || "",
     startTime: initialData.startTime || "",
     endDate: initialData.endDate || "",
@@ -87,8 +25,8 @@ export default function EventForm({
 
   const [imagePreview, setImagePreview] = useState(initialData.image || null);
   const [images, setImages] = useState([]);
-  const [addressSuggestions, setAddressSuggestions] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const { eventTypes, loading: typesLoading } = useEventTypes();
+  const VOTE_TYPE_IDS = [1, 2, 3]; 
 
   const [tickets, setTickets] = useState(
     initialData.tickets || [
@@ -104,34 +42,6 @@ export default function EventForm({
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAddressChange = async (e) => {
-    const value = e.target.value;
-    setForm({ ...form, addressInput: value });
-
-    if (value.length < 3) {
-      setAddressSuggestions([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const results = await searchAddress(value);
-      setAddressSuggestions(results);
-    } catch (error) {
-      console.error("Erreur recherche adresse:", error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSelectAddress = (item) => {
-    setForm({
-      ...form,
-      addressInput: item.label,
-    });
-    setAddressSuggestions([]);
   };
 
   const handleImageUpload = (e) => {
@@ -176,106 +86,57 @@ export default function EventForm({
     e.preventDefault();
 
     try {
-      // Validation
       if (!form.name || !form.description || !form.event_type) {
-        alert("Veuillez remplir tous les champs obligatoires");
+        toast.error("Veuillez remplir tous les champs obligatoires");
         return;
       }
-
-      if (!form.addressInput) {
-        alert("Veuillez entrer une adresse pour le géocodage");
-        return;
-      }
-
-      if (!form.locationDesc) {
-        alert("Veuillez décrire le lieu de l'événement");
-        return;
-      }
-
+      if (!form.mapsUrl) { toast.error("Veuillez entrer une URL de carte"); return; }
+      if (!form.locationDesc) { toast.error("Veuillez décrire le lieu"); return; }
       if (!form.startDate || !form.startTime || !form.endDate || !form.endTime) {
-        alert("Veuillez remplir toutes les dates et heures");
+        toast.error("Veuillez remplir toutes les dates et heures");
         return;
       }
-
       if (images.length === 0 && !imagePreview) {
-        alert("Veuillez ajouter au moins une image");
+        toast.error("Veuillez ajouter une image");
         return;
       }
-
-      // Validation des tickets
       for (const ticket of tickets) {
         if (!ticket.name || !ticket.places || !ticket.price) {
-          alert("Veuillez remplir tous les champs obligatoires des tickets");
+          toast.error("Veuillez remplir tous les champs des tickets");
           return;
         }
       }
 
-      // 🔥 Géocodage : réutiliser les coords existantes en mode edit si l'adresse n'a pas changé
-    let latitude, longitude;
-
-    if (
-      mode === "edit" &&
-      initialData.latitude &&
-      initialData.longitude &&
-      form.addressInput === initialData.addressInput
-    ) {
-      latitude = initialData.latitude;
-      longitude = initialData.longitude;
-      console.log("📍 Coordonnées existantes réutilisées:", latitude, longitude);
-    } else {
-      const coords = await geocodeAddress(form.addressInput);
-      latitude = coords.latitude;
-      longitude = coords.longitude;
-    }
       // Dates ISO
       const started_at = new Date(`${form.startDate}T${form.startTime}`).toISOString();
-      const ended_at = new Date(`${form.endDate}T${form.endTime}`).toISOString();
+      const ended_at   = new Date(`${form.endDate}T${form.endTime}`).toISOString();
       const ticket_due_payment_date = new Date(`${form.ticket_due_payment_date}T00:00:00`).toISOString();
 
-      // FormData pour l'API
+      // ✅ FormData avec les bons noms de champs selon l'API
       const formData = new FormData();
-      formData.append("name", form.name);
-      formData.append("description", form.description);
-      formData.append("event_type", form.event_type);
-      
-      // 🔥 city ET address = locationDesc (description du lieu)
-      formData.append("city", form.locationDesc);
-      formData.append("address", form.locationDesc);
-      
-      // 🔥 Coordonnées extraites du géocodage
-      formData.append("latitude", latitude.toString());
-      formData.append("longitude", longitude.toString());
-      
-      formData.append("started_at", started_at);
-      formData.append("ended_at", ended_at);
+      formData.append("name",                   form.name);
+      formData.append("description",            form.description);
+      formData.append("event_type_id",          form.event_type);  // ✅ event_type_id (integer)
+      formData.append("city",                   form.locationDesc);
+      formData.append("address",                form.locationDesc);
+      formData.append("place_maps_url",          form.mapsUrl);
+      formData.append("started_at",             started_at);
+      formData.append("ended_at",               ended_at);
       formData.append("ticket_due_payment_date", ticket_due_payment_date);
 
-      // Images
-      images.forEach((file) => {
-        formData.append("images", file);
-      });
-
-      // Debug: Afficher ce qui sera envoyé
-      console.log("📤 Données ÉVÉNEMENT envoyées:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
+      // ✅ "cover" et non "images" selon la doc API
+      if (images.length > 0) {
+        formData.append("cover", images[0]);
       }
-      
-      console.log("🎫 Tickets qui seront créés:", tickets);
 
       await onSubmit(formData, tickets);
 
     } catch (error) {
-      console.error("❌ Erreur complète:", error);
-      
-      // Essayer d'extraire plus d'infos de l'erreur
-      if (error.response) {
-        console.error("Réponse API:", await error.response.text());
-      }
-      
-      alert(error.message || "Erreur lors de la création de l'événement");
+      console.error("❌ Erreur:", error);
+      toast.error(error.message || "Erreur lors de la création");
     }
   };
+
   const iconClass =
     "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4";
 
@@ -308,7 +169,7 @@ export default function EventForm({
       </div>
 
       {/* Type */}
-      <div>
+     <div>
         <label className="text-sm font-medium text-gray-700 mb-1 block">
           Type d'événement *
         </label>
@@ -318,17 +179,17 @@ export default function EventForm({
           onChange={handleChange}
           className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
           required
+          disabled={typesLoading}
         >
-          <option value="">Choisissez le type</option>
-  <option value="Concert">Concert</option>
-  <option value="Soirée Cinéma">Soirée Cinéma</option>
-  <option value="JEEP">JEEP</option>
-  <option value="Soirée de Gala">Soirée de Gala</option>
-  <option value="Sortie Récréative">Sortie Récréative</option>
-  <option value="Chill">Chill</option>
-  <option value="Concours">Concours</option>
+        <option value="">{typesLoading ? "Chargement..." : "Choisissez le type"}</option>
+  {eventTypes
+    .filter((type) => !VOTE_TYPE_IDS.includes(type.id)) // ✅ seulement les types billetterie
+    .map((type) => (
+      <option key={type.id} value={type.id}>{type.label}</option>
+    ))}
         </select>
       </div>
+
 
       {/* Image Upload */}
       <div>
@@ -473,39 +334,25 @@ export default function EventForm({
         </div>
       </div>
 
-      {/* Lieu géocodage */}
-   {/* Adresse complète pour géocodage */}
+   
+   
+   {/* Adresse complète  */}
       <div className="relative">
-        <label className="text-sm font-medium text-gray-700 mb-1 block">
-          Adresse complète (pour localisation GPS) *
-        </label>
-        <input
-          name="addressInput"
-          value={form.addressInput}
-          onChange={handleAddressChange}
-          className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          placeholder="Ex: Palais des Congrès, Cotonou, Bénin"
-          required
-        />
-        {isSearching && (
-          <div className="absolute right-3 top-9 text-xs text-gray-500">
-            Recherche...
-          </div>
-        )}
-        {addressSuggestions.length > 0 && (
-          <ul className="absolute z-10 bg-white border w-full rounded-md mt-1 shadow-lg max-h-56 overflow-auto">
-            {addressSuggestions.map((item, index) => (
-              <li
-                key={index}
-                onClick={() => handleSelectAddress(item)}
-                className="px-3 py-2 text-sm hover:bg-orange-50 cursor-pointer border-b last:border-b-0"
-              >
-                {item.label}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+  <label className="text-sm font-medium text-gray-700 mb-1 block">
+    Lien Google Maps *
+  </label>
+  <div className="relative">
+    <MapPin className={iconClass} />
+    <input
+      name="mapsUrl"
+      value={form.mapsUrl}
+      onChange={handleChange}
+      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 pl-10"
+      placeholder="https://maps.google.com/..."
+      required
+    />
+  </div>
+</div>
 
       <div>
         <label className="text-sm font-medium text-gray-700 mb-1 block">

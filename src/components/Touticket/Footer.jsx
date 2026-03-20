@@ -13,7 +13,7 @@ export default function Footer() {
             alt="EPAC Events Logo"
             className="w-8 h-8 object-contain"
           />
-          <span className=" font-display text-lg">EPAC EVENTS</span>
+          <span className=" font-display text-lg">TOUTICKET</span>
         </div>
 
         {/* Copyright */}

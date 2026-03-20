@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/logo/touticket-logo.svg";
 import { useNavigate, Link } from "react-router-dom";
+import { forgotPasswordRequest } from "@/services/authService";
+import { toast } from "react-hot-toast";
 
 export default function ForgotPasswordPage() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const navigate  = useNavigate();
+  const [email, setEmail]     = useState("");
+  const [error, setError]     = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent]       = useState(false);
 
   const validate = () => {
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
@@ -19,21 +21,25 @@ export default function ForgotPasswordPage() {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await forgotPasswordRequest(email); // ✅ appel API
       setSent(true);
-    }, 1500);
+    } catch (err) {
+      toast.error(err?.message || "Erreur lors de l'envoi");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
-
           <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
 
             {/* Header */}
@@ -46,8 +52,8 @@ export default function ForgotPasswordPage() {
               </h1>
               <p className="text-gray-400 text-xs">
                 {sent
-                  ? `Un lien de réinitialisation a été envoyé à ${email}`
-                  : "Entrez votre email pour recevoir un lien de réinitialisation"}
+                  ? `Un code de réinitialisation a été envoyé à ${email}`
+                  : "Entrez votre email pour recevoir un code de réinitialisation"}
               </p>
             </div>
 
@@ -59,7 +65,7 @@ export default function ForgotPasswordPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-800">Vérifiez votre boîte mail</p>
                     <p className="text-xs text-gray-400 mt-1">
-                      Le lien expirera dans 30 minutes. Pensez à vérifier vos spams.
+                      Le code expirera dans 30 minutes. Pensez à vérifier vos spams.
                     </p>
                   </div>
                 </div>
@@ -71,11 +77,12 @@ export default function ForgotPasswordPage() {
                   Utiliser un autre email
                 </button>
 
+                {/* ✅ Redirige vers /set-password avec l'email */}
                 <button
-                  onClick={() => navigate("/touticket/admin/login")}
+                  onClick={() => navigate("/set-password", { state: { email } })}
                   className="w-full h-11 rounded-lg bg-main-gradient btn-gradient text-white text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                 >
-                  Retour à la connexion
+                  Entrer le code reçu
                 </button>
               </div>
             ) : (
@@ -89,7 +96,7 @@ export default function ForgotPasswordPage() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="email"
-                      placeholder="votre@email.com"
+                      placeholder="Adresse e-mail"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setError(""); }}
                       className={`w-full bg-white border ${error ? "border-red-400" : "border-gray-200"} rounded-lg px-4 py-2.5 pl-10 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-orange-400 transition-colors duration-200`}
@@ -109,11 +116,11 @@ export default function ForgotPasswordPage() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Envoi en cours...
                       </>
-                    ) : "Envoyer le lien"}
+                    ) : "Envoyer le code"}
                   </button>
 
                   <Link
-                    to="/touticket/admin/login"
+                    to="/login"
                     className="w-full h-11 rounded-lg border border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <ArrowLeft className="w-4 h-4" />

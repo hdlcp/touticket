@@ -1,14 +1,16 @@
 import { ArrowRight } from "lucide-react";
 
 export function EntityCard({ entity }) {
+  const image = entity.images?.[0]?.url || null;
+
   return (
-    
-      <a href={`/entity/${entity.slug}`}
+    <a
+      href={`/entity/${entity.id}`}
       className="group block bg-card rounded-xl overflow-hidden border border-blue-50 shadow-sm hover:shadow-lg transition-all duration-300"
     >
       <div className="relative aspect-video overflow-hidden">
         <img
-          src={entity.coverImage}
+          src={image}
           alt={entity.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -28,6 +30,5 @@ export function EntityCard({ entity }) {
         </div>
       </div>
     </a>
-    
   );
 }

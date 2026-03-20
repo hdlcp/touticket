@@ -2,15 +2,18 @@ import { useState, useRef } from "react";
 import { Mail, Lock, Eye, EyeOff, Building, ImagePlus, X, ArrowLeft, Loader2 } from "lucide-react";
 import logo from "@/assets/logo/touticket-logo.svg";
 import { useNavigate, Link } from "react-router-dom";
+import { validatePassword, PasswordCriteria } from "./TouticketComponents/PasswordCriteria";
+import { signupRequest } from "@/services/authService";
+import { toast } from "react-hot-toast";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword]           = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
-  const [coverPreview, setCoverPreview] = useState(null);
-  const fileInputRef = useRef(null);
+  const [isLoading, setIsLoading]                 = useState(false);
+  const [step, setStep]                           = useState(1);
+  const [coverPreview, setCoverPreview]           = useState(null);
+  const fileInputRef                              = useRef(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -31,10 +34,16 @@ export default function RegisterPage() {
   const validateStep1 = () => {
     const e = {};
     if (!formData.firstName.trim()) e.firstName = "Requis";
-    if (!formData.lastName.trim()) e.lastName = "Requis";
+    if (!formData.lastName.trim())  e.lastName  = "Requis";
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = "Email invalide";
-    if (formData.password.length < 8) e.password = "8 caractères minimum";
-    if (formData.password !== formData.confirmPassword) e.confirmPassword = "Les mots de passe ne correspondent pas";
+
+    // ✅ Validation complète du mot de passe
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) e.password = passwordError;
+
+    if (formData.password !== formData.confirmPassword) {
+      e.confirmPassword = "Les mots de passe ne correspondent pas";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -52,16 +61,60 @@ export default function RegisterPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (step === 1) {
       if (validateStep1()) setStep(2);
       return;
     }
+
+    // ✅ Validation step 2
+    if (!formData.entityName.trim()) {
+      toast.error("Le nom de l'organisation est obligatoire");
+      return;
+    }
+    if (!formData.entityDescription.trim()) {
+      toast.error("La description de l'organisation est obligatoire");
+      return;
+    }
+
     setIsLoading(true);
-    setTimeout(() => {
-      navigate("/admin/dashboard");
-    }, 1500);
+    try {
+      // ✅ FormData pour l'API
+      const data = new FormData();
+      data.append("firstname",                formData.firstName);
+      data.append("lastname",                 formData.lastName);
+      data.append("gender",                   "male"); // à adapter si tu ajoutes un champ genre
+      data.append("email",                    formData.email);
+      data.append("password",                 formData.password);
+      data.append("confirm_password",         formData.confirmPassword);
+      data.append("organization_name",        formData.entityName);
+      data.append("organization_description", formData.entityDescription);
+      if (formData.coverImage) {
+        data.append("organization_images",    formData.coverImage);
+      }
+console.log("📤 Données signup:");
+for (let [key, value] of data.entries()) {
+  console.log(`  ${key}:`, value);
+}
+      await signupRequest(data);
+
+      toast.success("Compte créé ! Vérifiez votre email.");
+
+      // ✅ Redirige vers /Checkaccount avec l'email
+      navigate("/Checkaccount", { state: { email: formData.email } });
+
+    } catch (error) {
+      if (error.response) {
+        const errBody = await error.response.json().catch(() => ({}));
+        toast.error(errBody.message || "Erreur lors de la création du compte");
+      } else {
+        toast.error("Erreur de connexion");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const inputClass = (field) =>
@@ -71,7 +124,6 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
-
           <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
 
             {/* Header */}
@@ -85,8 +137,6 @@ export default function RegisterPage() {
               <p className="text-gray-400 text-xs">
                 {step === 1 ? "Étape 1/2 — Informations personnelles" : "Étape 2/2 — Informations de l'organisation"}
               </p>
-
-              {/* Progress */}
               <div className="flex gap-2 justify-center mt-4">
                 <div className="h-1 w-16 rounded-full bg-main-gradient" />
                 <div className={`h-1 w-16 rounded-full transition-colors duration-300 ${step === 2 ? "bg-main-gradient" : "bg-gray-200"}`} />
@@ -101,22 +151,14 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1.5 block">Prénom</label>
-                      <input
-                        placeholder="John"
-                        value={formData.firstName}
-                        onChange={(e) => update("firstName", e.target.value)}
-                        className={inputClass("firstName")}
-                      />
+                      <input value={formData.firstName} onChange={(e) => update("firstName", e.target.value)}
+                        className={inputClass("firstName")} placeholder="" />
                       {errors.firstName && <p className="text-red-400 text-xs mt-1">{errors.firstName}</p>}
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-600 mb-1.5 block">Nom</label>
-                      <input
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={(e) => update("lastName", e.target.value)}
-                        className={inputClass("lastName")}
-                      />
+                      <input value={formData.lastName} onChange={(e) => update("lastName", e.target.value)}
+                        className={inputClass("lastName")} placeholder="" />
                       {errors.lastName && <p className="text-red-400 text-xs mt-1">{errors.lastName}</p>}
                     </div>
                   </div>
@@ -125,13 +167,9 @@ export default function RegisterPage() {
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="email"
-                        placeholder="votre@email.com"
-                        value={formData.email}
+                      <input type="email" placeholder="Adresse e-mail" value={formData.email}
                         onChange={(e) => update("email", e.target.value)}
-                        className={`${inputClass("email")} pl-10`}
-                      />
+                        className={`${inputClass("email")} pl-10`} />
                     </div>
                     {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
                   </div>
@@ -140,32 +178,25 @@ export default function RegisterPage() {
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Mot de passe</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={(e) => update("password", e.target.value)}
-                        className={`${inputClass("password")} pl-10 pr-10`}
-                      />
+                      <input type={showPassword ? "text" : "password"} placeholder="••••••••"
+                        value={formData.password} onChange={(e) => update("password", e.target.value)}
+                        className={`${inputClass("password")} pl-10 pr-10`} />
                       <button type="button" onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+                    <PasswordCriteria password={formData.password} />
                   </div>
 
                   <div>
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Confirmer le mot de passe</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={(e) => update("confirmPassword", e.target.value)}
-                        className={`${inputClass("confirmPassword")} pl-10 pr-10`}
-                      />
+                      <input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••"
+                        value={formData.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)}
+                        className={`${inputClass("confirmPassword")} pl-10 pr-10`} />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -183,73 +214,46 @@ export default function RegisterPage() {
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Nom de l'organisation</label>
                     <div className="relative">
                       <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        placeholder="Ex: ENA, EPAC, UAC..."
-                        value={formData.entityName}
+                      <input placeholder="Ex: ENA, EPAC, UAC..." value={formData.entityName}
                         onChange={(e) => update("entityName", e.target.value)}
-                        className={`${inputClass("entityName")} pl-10`}
-                        required
-                      />
+                        className={`${inputClass("entityName")} pl-10`} required />
                     </div>
                   </div>
 
                   <div>
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Description</label>
-                    <textarea
-                      placeholder="Décrivez brièvement votre organisation..."
-                      rows={3}
-                      value={formData.entityDescription}
-                      onChange={(e) => update("entityDescription", e.target.value)}
-                      className={`${inputClass("entityDescription")} resize-none`}
-                      required
-                    />
+                    <textarea placeholder="Décrivez brièvement votre organisation..." rows={3}
+                      value={formData.entityDescription} onChange={(e) => update("entityDescription", e.target.value)}
+                      className={`${inputClass("entityDescription")} resize-none`} required />
                   </div>
 
-                  {/* Cover image upload */}
+                  {/* Cover image */}
                   <div>
-                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">
-                      Photo de présentation
-                    </label>
-
+                    <label className="text-xs font-medium text-gray-600 mb-1.5 block">Photo de présentation</label>
                     {coverPreview ? (
                       <div className="relative rounded-xl overflow-hidden aspect-video border border-gray-200">
                         <img src={coverPreview} alt="Aperçu" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        <button
-                          type="button"
-                          onClick={removeCover}
-                          className="absolute top-2 right-2 w-7 h-7 bg-white hover:bg-red-50 border border-gray-200 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm"
-                        >
+                        <button type="button" onClick={removeCover}
+                          className="absolute top-2 right-2 w-7 h-7 bg-white hover:bg-red-50 border border-gray-200 rounded-full flex items-center justify-center transition-colors shadow-sm">
                           <X className="w-3.5 h-3.5 text-gray-600" />
                         </button>
-                        <p className="absolute bottom-2 left-3 text-white text-xs drop-shadow">
-                          {formData.coverImage?.name}
-                        </p>
+                        <p className="absolute bottom-2 left-3 text-white text-xs drop-shadow">{formData.coverImage?.name}</p>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full aspect-video border-2 border-dashed border-gray-200 hover:border-orange-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-orange-400 transition-all duration-200 group bg-gray-50 hover:bg-orange-50/30"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-orange-200 flex items-center justify-center transition-colors duration-200 shadow-sm">
+                      <button type="button" onClick={() => fileInputRef.current?.click()}
+                        className="w-full aspect-video border-2 border-dashed border-gray-200 hover:border-orange-300 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-orange-400 transition-all group bg-gray-50 hover:bg-orange-50/30">
+                        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 group-hover:border-orange-200 flex items-center justify-center shadow-sm">
                           <ImagePlus className="w-5 h-5" />
                         </div>
                         <span className="text-xs font-medium">Cliquer pour uploader une image</span>
                         <span className="text-[10px] text-gray-300">JPG, PNG — max 5 MB</span>
                       </button>
                     )}
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverChange}
-                      className="hidden"
-                    />
+                    <input ref={fileInputRef} type="file" accept="image/*"
+                      onChange={handleCoverChange} className="hidden" />
                   </div>
 
-                  {/* Avantages */}
                   <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
                     <p className="text-xs text-gray-400 mb-2">En créant votre organisation, vous pourrez :</p>
                     <ul className="space-y-1.5">
@@ -267,24 +271,15 @@ export default function RegisterPage() {
               {/* Actions */}
               <div className="flex gap-3 pt-2">
                 {step === 2 && (
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="flex items-center justify-center gap-2 w-12 h-11 rounded-lg border border-gray-200 hover:border-gray-300 text-gray-400 hover:text-gray-600 transition-all duration-200 flex-shrink-0"
-                  >
+                  <button type="button" onClick={() => setStep(1)}
+                    className="flex items-center justify-center gap-2 w-12 h-11 rounded-lg border border-gray-200 hover:border-gray-300 text-gray-400 hover:text-gray-600 transition-all flex-shrink-0">
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 h-11 rounded-lg bg-main-gradient btn-gradient disabled:opacity-60 text-white text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
-                >
+                <button type="submit" disabled={isLoading}
+                  className="flex-1 h-11 rounded-lg bg-main-gradient btn-gradient disabled:opacity-60 text-white text-sm font-semibold transition-all flex items-center justify-center gap-2">
                   {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Création...
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" />Création...</>
                   ) : step === 1 ? "Continuer" : "Créer mon organisation"}
                 </button>
               </div>
@@ -292,7 +287,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-xs text-gray-400 mt-6">
               Déjà un compte ?{" "}
-              <Link to="/touticket/admin/login" className="text-orange-500 hover:text-orange-600 font-medium transition-colors">
+              <Link to="/login" className="text-orange-500 hover:text-orange-600 font-medium transition-colors">
                 Se connecter
               </Link>
             </p>
