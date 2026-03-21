@@ -2,7 +2,7 @@ import ky from "ky";
 import { toast } from "react-hot-toast";
 
 const api = ky.create({
-  prefixUrl: "/",
+  prefixUrl: "https://touticket.alwaysdata.net",
   // ❌ NE PAS mettre Content-Type ici globalement
   // Ky le gère automatiquement selon le type de body
   hooks: {
