@@ -7,7 +7,7 @@ import EventRow from "./EventRow";
 
 const TABS = [
   { id: "concert", label: "Billetterie" },
-  { id: "vote", label: "Votes & Élections" },
+  { id: "vote", label: "Votes" },
 ];
 
 export default function DashboardPage({

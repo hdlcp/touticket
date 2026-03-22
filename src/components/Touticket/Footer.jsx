@@ -18,7 +18,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-sm text-gray-400 text-center">
-          © 2026 <a href="https://oloukpedeadeniyiprosper.pro" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors underline">touticket.com</a>. Tous droits réservés.
+          © 2026 <a href="https://oloukpedeadeniyiprosper.pro" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors underline">Nunc Consulting</a>. Tous droits réservés.
         </div>
 
         {/* Réseaux sociaux */}

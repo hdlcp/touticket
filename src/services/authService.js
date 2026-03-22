@@ -43,7 +43,13 @@ export const resetPasswordRequest = async (email, otp_code, new_password, confir
   }
 };
 
-// services/authService.js
+export async function resendVerificationCode(email) {
+  return await api.post("api/auth/verify/code-resent", {
+    json: { email },
+  }).json();
+}
+
+
 // services/authService.js
 export async function signupRequest(formData) {
   try {

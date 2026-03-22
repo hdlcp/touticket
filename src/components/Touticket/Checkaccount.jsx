@@ -1,24 +1,24 @@
+// AccountVerification.jsx
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-import { activateAccount } from "@/services/authService.js";
+import { activateAccount, resendVerificationCode } from "@/services/authService.js";
 import logo from "@/assets/logo/touticket-logo.svg";
+import { getApiErrorMessage } from "@/services/apiError";
+
 
 export default function AccountVerification() {
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [otp, setOtp]               = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [resending, setResending]   = useState(false); // ✅ état renvoi
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const email = location.state?.email || sessionStorage.getItem("auth_email");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!otp) {
-      toast.error("Veuillez entrer le code reçu !");
-      return;
-    }
+    if (!otp) { toast.error("Veuillez entrer le code reçu !"); return; }
 
     setLoading(true);
     try {
@@ -34,9 +34,31 @@ export default function AccountVerification() {
         toast.error("Code incorrect ou expiré.");
       }
     } catch (error) {
-      toast.error(error?.message || "Code incorrect !");
+      if (error.response) {
+        const errBody = await error.response.json().catch(() => ({}));
+        toast.error(errBody.message || "Code incorrect !");
+      } else {
+        toast.error("Code incorrect !");
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Renvoyer le code
+  const handleResend = async () => {
+    if (!email) { toast.error("Email introuvable, recommencez le processus."); return; }
+
+    setResending(true);
+    try {
+      await resendVerificationCode(email);
+      toast.success("Code renvoyé ! Vérifiez votre boîte mail.");
+      setOtp(""); // reset le champ
+    } catch (err) {
+       const message = await getApiErrorMessage(err, "Erreur lors du renvoi du code");
+  toast.error(message);
+    } finally {
+      setResending(false);
     }
   };
 
@@ -60,7 +82,6 @@ export default function AccountVerification() {
               </p>
             </div>
 
-            {/* Formulaire */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1.5 block">
@@ -76,12 +97,17 @@ export default function AccountVerification() {
                 />
               </div>
 
+              {/* ✅ Bouton renvoyer connecté */}
               <div className="text-right">
                 <button
                   type="button"
-                  className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="text-xs text-orange-500 hover:text-orange-600 font-medium transition-colors disabled:opacity-50 flex items-center gap-1 ml-auto"
                 >
-                  Renvoyer le code
+                  {resending ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" />Envoi...</>
+                  ) : "Renvoyer le code"}
                 </button>
               </div>
 
@@ -92,10 +118,7 @@ export default function AccountVerification() {
                   className="w-full h-11 rounded-lg bg-main-gradient btn-gradient disabled:opacity-60 text-white text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Vérification...
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" />Vérification...</>
                   ) : "Vérifier le code"}
                 </button>
               </div>

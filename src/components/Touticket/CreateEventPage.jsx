@@ -7,6 +7,7 @@ import VoteEventForm from "./TouticketComponents/VoteEventForm";
 import { createVoteEvent } from "@/services/voteEventService";
 import { createTicketingEvent,  createTicketForEvent} from "@/services/eventService";
 import toast from "react-hot-toast";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
@@ -46,18 +47,9 @@ const handleSubmitConcert = async (formData, tickets) => {
 
     navigate("/touticket/dashboard");
   } catch (e) {
-    // ✅ Récupère le vrai message d'erreur de l'API
-    if (e.response) {
-      try {
-        const errBody = await e.response.json();
-        toast.error(errBody.message || "Erreur lors de la création");
-      } catch {
-        toast.error("Erreur lors de la création");
-      }
-    } else {
-      toast.error(e?.message || "Erreur inattendue");
-    }
-    console.error("Erreur création événement:", e);
+   const message = await getApiErrorMessage(e, "Erreur lors de la création");
+      toast.error(message);
+      console.error("Erreur création événement:", e);
   } finally {
     setLoading(false);
   }
@@ -65,9 +57,6 @@ const handleSubmitConcert = async (formData, tickets) => {
 const handleSubmitVote = async (formFields, candidates, coverFile) => {
   setLoading(true);
   try {
-    console.log("formFields:", formFields);
-    console.log("candidates:", candidates);
-    console.log("coverFile:", coverFile);
 
     const res = await createVoteEvent(formFields, candidates, coverFile);
 
@@ -80,8 +69,9 @@ const handleSubmitVote = async (formFields, candidates, coverFile) => {
       toast.error(res.message || "Erreur lors de la création");
     }
   } catch (e) {
-    console.error("❌ Erreur:", e);
-    toast.error(e?.message || "Erreur lors de la création");
+    const message = await getApiErrorMessage(e, "Erreur lors de la création");
+      toast.error(message);
+      console.error("❌ Erreur:", e);
   } finally {
     setLoading(false);
   }

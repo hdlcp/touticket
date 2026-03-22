@@ -9,7 +9,7 @@ import { getPublicAllEvents } from "@/services/eventService";
 
 const tabs = [
   { id: "billetterie", label: "Billetterie" },
-  { id: "votes", label: "Votes & Élections", isNew: true },
+  { id: "votes", label: "Votes", isNew: true },
 ];
 
 export default function EntityPage() {

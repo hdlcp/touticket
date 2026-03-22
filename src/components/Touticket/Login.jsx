@@ -4,6 +4,7 @@ import logo from "@/assets/logo/touticket-logo.svg";
 import { useNavigate, Link } from "react-router-dom";
 import { loginRequest } from "@/services/authService";
 import { toast } from "react-hot-toast";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,10 +32,9 @@ export default function LoginPage() {
       navigate("/Checkaccount", { state: { email } });
 
     } catch (err) {
-      toast.error("Identifiants incorrects");
-    } finally {
-      setLoading(false);
-    }
+  const message = await getApiErrorMessage(err, "Identifiants incorrects");
+  toast.error(message);
+}
   };
 
   const inputClass = `w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-orange-400 transition-colors duration-200`;

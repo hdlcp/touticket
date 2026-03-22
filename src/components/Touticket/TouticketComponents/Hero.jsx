@@ -25,7 +25,7 @@ export default function Hero() {
 
       if (res.success) {
         // ✅ Images du carrousel depuis organization_images
-        const images = res.data.organization_images || [];
+        const images = (res.data.organization_images || []).slice(1);
         if (images.length > 0) {
           setSlides(images.map((img) => ({
             image: img.url,
