@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { resetPasswordRequest } from "@/services/authService";
 import { validatePassword, PasswordCriteria } from "./TouticketComponents/PasswordCriteria";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function SetPassword() {
   const [showPassword, setShowPassword]         = useState(false);
@@ -35,12 +36,8 @@ const handleSubmit = async (e) => {
     toast.success("Mot de passe réinitialisé avec succès !");
     navigate("/login");
   } catch (error) {
-   if (error.response) {
-    const errBody = await error.response.json().catch(() => ({}));
-    toast.error(errBody.message || "Code expiré ou incorrect");
-  } else {
-    toast.error("Erreur de connexion");
-  }
+    const message = await getApiErrorMessage(error, "Erreur lors de la réinitialisation");
+    toast.error(message);
   } finally {
     setLoading(false);
   }

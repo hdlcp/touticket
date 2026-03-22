@@ -9,6 +9,7 @@ import {
   updateOrganization,
 } from "@/services/organizationService";
 import { compressImage, validateImageFile } from "./hooks/compressImage";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function OrganizationCarousel() {
   const [org, setOrg]                 = useState(null);
@@ -29,7 +30,8 @@ export default function OrganizationCarousel() {
       const res = await getOrganization();
       if (res.success) setOrg(res.data);
     } catch (e) {
-      console.error("Erreur:", e);
+     const message = await getApiErrorMessage(e, "Erreur chargement organisation");
+  toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -68,12 +70,9 @@ export default function OrganizationCarousel() {
         toast.error(res.message || "Erreur lors de l'ajout");
       }
     } catch (e) {
-      if (e.response) {
-        const err = await e.response.json().catch(() => ({}));
-        toast.error(err.message || "Erreur");
-      } else {
-        toast.error("Erreur de connexion");
-      }
+      const message = await getApiErrorMessage(e, "Erreur lors de l'ajout de l'image");
+      toast.error(message);
+      console.error("Erreur ajout image:", e);
     } finally {
       setUploading(false);
     }
@@ -92,7 +91,9 @@ export default function OrganizationCarousel() {
         toast.error(res.message || "Erreur lors de la suppression");
       }
     } catch (e) {
-      toast.error("Erreur lors de la suppression");
+      const message = await getApiErrorMessage(e, "Erreur lors de la suppression de l'image");
+      toast.error(message);
+      console.error("Erreur suppression image:", e);  
     } finally {
       setDeletingName(null);
     }

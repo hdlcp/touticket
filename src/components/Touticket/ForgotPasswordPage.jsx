@@ -4,6 +4,7 @@ import logo from "@/assets/logo/touticket-logo.svg";
 import { useNavigate, Link } from "react-router-dom";
 import { forgotPasswordRequest } from "@/services/authService";
 import { toast } from "react-hot-toast";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function ForgotPasswordPage() {
   const navigate  = useNavigate();
@@ -30,7 +31,8 @@ export default function ForgotPasswordPage() {
       await forgotPasswordRequest(email); // ✅ appel API
       setSent(true);
     } catch (err) {
-      toast.error(err?.message || "Erreur lors de l'envoi");
+      const message = await getApiErrorMessage(err, "Erreur lors de l'envoi");
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

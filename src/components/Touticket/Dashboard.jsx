@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import DashboardPage from "./TouticketComponents/DashboardPage";
 import { getStats } from "@/services/statsService";
 import { getAdminAllEvents } from "@/services/eventService";
+import { getApiErrorMessage } from "@/services/apiError";
 
 // ✅ IDs des types vote directement dans le fichier
 const VOTE_TYPE_IDS = [1, 2, 3]; // Election Miss, Election Mister, Concours de talents
@@ -29,8 +30,9 @@ export default function AdminDashboard() {
     try {
       const res = await getStats();
       if (res.success) setStatsData(res.data.global);
-    } catch {
-      toast.error("Impossible de charger les statistiques");
+    } catch (err) {
+      const message = await getApiErrorMessage(err, "Impossible de charger les statistiques");
+      toast.error(message);
     } finally {
       setStatsLoading(false);
     }
@@ -51,8 +53,9 @@ export default function AdminDashboard() {
         setEventPrices(prices);
       }
     } catch (e) {
-      console.error("Erreur fetchEvents:", e);
-      toast.error("Impossible de charger les événements");
+      const message = await getApiErrorMessage(e, "Impossible de charger les événements");
+      toast.error(message);
+      console.error("Erreur chargement événements:", e);
     } finally {
       setEventLoading(false);
     }

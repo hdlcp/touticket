@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Calendar, Clock, MapPin, Upload, Save, X, Plus } from "lucide-react";
 import { useEventTypes } from "./hooks/useEventTypes";
 import { toast } from "react-hot-toast";
+import { getApiErrorMessage } from "@/services/apiError";
 
 
 export default function EventForm({
@@ -133,7 +134,8 @@ export default function EventForm({
 
     } catch (error) {
       console.error("❌ Erreur:", error);
-      toast.error(error.message || "Erreur lors de la création");
+      const message = await getApiErrorMessage(error, "Erreur lors de la création");
+      toast.error(message);
     }
   };
 

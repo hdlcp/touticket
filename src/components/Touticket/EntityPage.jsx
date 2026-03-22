@@ -7,6 +7,7 @@ import Votes from "./TouticketComponents/Vote";
 import { Search } from "lucide-react";
 import { getPublicAllEvents } from "@/services/eventService";
 
+
 const tabs = [
   { id: "billetterie", label: "Billetterie" },
   { id: "votes", label: "Votes", isNew: true },

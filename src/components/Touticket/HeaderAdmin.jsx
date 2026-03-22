@@ -20,7 +20,6 @@ export default function Header() {
       const res = await getUserProfile();
       setProfile(res.data || res);
     } catch (error) {
-      // Silencieux — CORS en dev, on ignore
       console.warn("Profil non chargé:", error.message);
     } finally {
       setProfileLoading(false);

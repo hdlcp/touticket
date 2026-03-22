@@ -9,6 +9,7 @@ import {
 } from "@/services/userService";
 import OrganizationCarousel from "./OrganizationCarousel";
 import { getOrganization, updateOrganization } from "@/services/organizationService";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function AdminAccount() {
   const [profile, setProfile] = useState(null);
@@ -48,7 +49,8 @@ async function fetchOrg() {
       setOrgForm({ name: res.data.name || "", description: res.data.description || "" });
     }
   } catch (e) {
-    console.error("Erreur chargement organisation:", e);
+    const message = await getApiErrorMessage(e, "Erreur chargement organisation");
+    toast.error(message);
   }
 }
 
@@ -65,7 +67,8 @@ async function handleOrgUpdate(e) {
       toast.error(res.message || "Erreur");
     }
   } catch (e) {
-    toast.error("Erreur lors de la mise à jour");
+    const message = await getApiErrorMessage(e, "Erreur lors de la mise à jour");
+    toast.error(message);
   } finally {
     setIsUpdatingOrg(false);
   }
@@ -74,8 +77,7 @@ async function handleOrgUpdate(e) {
   async function fetchProfile() {
     try {
       const res = await getUserProfile();
-      console.log("Profil reçu:", res);
-
+    
       const userData = res.data || res;
 
       setProfile(userData);
@@ -87,8 +89,8 @@ async function handleOrgUpdate(e) {
         gender: userData.gender || "male",
       });
     } catch (error) {
-      console.error("Erreur chargement profil:", error);
-      toast.error("Impossible de charger le profil");
+      const message = await getApiErrorMessage(error, "Impossible de charger le profil");
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -131,19 +133,8 @@ async function handleOrgUpdate(e) {
       toast.success("Profil mis à jour avec succès !");
       fetchProfile(); // Recharger le profil
     } catch (error) {
-      console.error("Erreur mise à jour profil:", error);
-
-      if (error.response) {
-        const errorData = await error.response.json().catch(() => ({}));
-
-        if (error.response.status === 409) {
-          toast.error("Cet email ou nom d'utilisateur est déjà utilisé");
-        } else {
-          toast.error(errorData.message || "Erreur lors de la mise à jour");
-        }
-      } else {
-        toast.error("Erreur de connexion");
-      }
+      const message = await getApiErrorMessage(error, "Erreur lors de la mise à jour du profil");
+      toast.error(message);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -186,24 +177,11 @@ async function handleOrgUpdate(e) {
         confirm_password: "",
       });
     } catch (error) {
-      console.error("Erreur changement mot de passe:", error);
-
-      if (error.response) {
-        const errorData = await error.response.json().catch(() => ({}));
-
-        if (error.response.status === 401) {
-          toast.error("Ancien mot de passe incorrect");
-        } else {
-          toast.error(
-            errorData.message || "Erreur lors du changement de mot de passe",
-          );
-        }
-      } else {
-        toast.error("Erreur de connexion");
-      }
+      const message = await getApiErrorMessage(error, "Erreur lors du changement de mot de passe");
+      toast.error(message);
     } finally {
       setIsUpdatingPassword(false);
-    }
+        }
   }
 
   // Suppression compte
@@ -231,8 +209,8 @@ async function handleOrgUpdate(e) {
         window.location.href = "/";
       }, 1000);
     } catch (error) {
-      console.error("Erreur suppression compte:", error);
-      toast.error("Impossible de supprimer le compte");
+      const message = await getApiErrorMessage(error, "Erreur lors de la suppression du compte");
+      toast.error(message);
     }
   }
 

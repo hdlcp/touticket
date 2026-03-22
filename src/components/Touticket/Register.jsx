@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { validatePassword, PasswordCriteria } from "./TouticketComponents/PasswordCriteria";
 import { signupRequest } from "@/services/authService";
 import { toast } from "react-hot-toast";
+import { getApiErrorMessage } from "@/services/apiError";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -106,12 +107,8 @@ for (let [key, value] of data.entries()) {
       navigate("/Checkaccount", { state: { email: formData.email } });
 
     } catch (error) {
-      if (error.response) {
-        const errBody = await error.response.json().catch(() => ({}));
-        toast.error(errBody.message || "Erreur lors de la création du compte");
-      } else {
-        toast.error("Erreur de connexion");
-      }
+      const message = await getApiErrorMessage(error, "Erreur lors de la création du compte");
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
