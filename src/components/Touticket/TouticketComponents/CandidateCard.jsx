@@ -20,7 +20,7 @@ export default function CandidateCard({
   href,
 
   // Bouton
-  buttonLabel = "VOTER POUR ELLE",
+  buttonLabel = "VOTER POUR CE CANDIDAT",
   onButtonClick,
 
   // Affichage conditionnel

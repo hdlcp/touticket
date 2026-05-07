@@ -115,7 +115,7 @@ export default function VoteDetail() {
           Aucune candidate disponible pour le moment.
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...candidates]
             .sort((a, b) => b.votes_count - a.votes_count) // ✅ votes_count
             .map((candidate, index) => (
@@ -130,7 +130,7 @@ export default function VoteDetail() {
                 votes={candidate.votes_count}             // ✅ votes_count
                 totalVotes={totalVotes}
                 rank={index + 1}
-                buttonLabel="VOTER POUR ELLE"
+                buttonLabel="VOTER POUR CE CANDIDAT"
                 onButtonClick={() => handleVote(candidate.id)}
               />
             ))}
